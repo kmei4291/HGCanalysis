@@ -14,7 +14,7 @@ def my_range(start, end, step):
 #open ROOT file (input and output)
 #fIn=ROOT.TFile.Open('/afs/cern.ch/user/p/psilva/public/hgcsummer2015/HGCROIAnalyzer.root')
 fIn=ROOT.TFile.Open('/afs/cern.ch/user/k/kmei/public/FastTiming/ntuples/practice_100evts.root')
-fOut=ROOT.TFile.Open('simpleMuonAnalysis.root','RECREATE')
+fOut=ROOT.TFile.Open('simpleMuonAnalysisTree.root','RECREATE')
 
 #read tree from file
 tree=fIn.Get('analysis/HGC')
@@ -27,16 +27,11 @@ outputTree.Branch('ct',tvector,'ct/D')
 
 print 'Preparing to analyze %d events'%tree.GetEntriesFast()
 
-#prepare some control histogram
-#recoVSsimH = ROOT.TH2F('recoVsim',';Collision time (ct) [cm];Reconstructed Vertex Z-Coordinate[cm]',100,20,20,100,-20,20)
-#ctMinusZH  = ROOT.TH1F('ctMinusZ',';ct - Z[cm];Number of Events',10,-10,10)
-ctVSZH     = ROOT.TH2F('ctVsZ',';Vertex Z Coordinate [cm]; Reconstructed Time [ct]',101,-10,10,101,-10,10)
-
 eta0 = 1.5 #will float this later
 
 #loop over events in tree
 #for i in xrange(0,tree.GetEntriesFast()) :
-for i in xrange(0,4) : #debugging issues
+for i in xrange(54,55) : #debugging issues
 	tree.GetEntry(i)
 
 	#Only look at events with reconstructed vertices:
@@ -60,13 +55,15 @@ for i in xrange(0,4) : #debugging issues
 		#for now, get the simulated hit time for one layer
 		for hit in tree.RecHits:
 			if hit.layerId_ != 1 : continue
+			if hit.t_ < .05 : continue
 			
-			firstLayerHitTime =  hit.simT_[0]
+			firstLayerHitTime =  hit.t_
 			firstLayerHitX = hit.x_
 			firstLayerHitY = hit.y_
 			firstLayerHitZ = hit.z_
 
 		#Formula for the pseudorapidity is -ln(tan(polar_angle)/2) - geometric, but approximate
+		print firstLayerHitTime, firstLayerHitX, firstLayerHitY, firstLayerHitZ
 		for d in my_range(-10,10,.01) :
 			r_0 = ROOT.TMath.Sqrt(ROOT.TMath.Power(firstLayerHitX,2)+ROOT.TMath.Power(firstLayerHitY,2)+ROOT.TMath.Power(firstLayerHitZ-d,2))
 			eta0 = -1*ROOT.TMath.Log(ROOT.TMath.Tan(ROOT.TMath.ACos(firstLayerHitZ/r_0)/2))
@@ -75,15 +72,12 @@ for i in xrange(0,4) : #debugging issues
 			epsd2=(ROOT.TMath.Power(firstLayerHitZ/(firstLayerHitZ-d),2)-1.0)/ROOT.TMath.Power(ROOT.TMath.CosH(eta0),2)
 			fullShift = -(1.0/LIGHTSPEED*ROOT.TMath.TanH(eta0))*(firstLayerHitZ-(firstLayerHitZ+d)*ROOT.TMath.Sqrt(1+epsd2))
 			ct = 29.9792458*(firstLayerHitTime+fullShift-1.0)
-			#print eta0,(firstLayerHitTime+fullShift-1.0)
-			ctVSZH.Fill(d,ct)
-			dvector = d
-			tvector = ct
-			print dvector, tvector
+			dvector[0] = d
+			tvector[0] = ct
+			#print dvector[0], tvector[0]
 			outputTree.Fill()
 	
 #save histos to file
 fOut.Write()
-#recoVSsimH.Write()
 fOut.Close()
 
