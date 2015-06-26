@@ -23,7 +23,8 @@ dvector=n.zeros(1,dtype=float)
 tvector=n.zeros(1,dtype=float)
 
 outputTree.Branch('d',dvector,'d/D')
-outputTree.Branch('ct',tvector,'ct/D') 
+outputTree.Branch('ct',tvector,'ct/D')
+LIGHTSPEED = 29.9792458 #cm/ns
 
 print 'Preparing to analyze %d events'%tree.GetEntriesFast()
 
@@ -63,11 +64,9 @@ for i in xrange(54,55) : #debugging issues
 			firstLayerHitZ = hit.z_
 
 		#Formula for the pseudorapidity is -ln(tan(polar_angle)/2) - geometric, but approximate
-		print firstLayerHitTime, firstLayerHitX, firstLayerHitY, firstLayerHitZ
 		for d in my_range(-10,10,.01) :
 			r_0 = ROOT.TMath.Sqrt(ROOT.TMath.Power(firstLayerHitX,2)+ROOT.TMath.Power(firstLayerHitY,2)+ROOT.TMath.Power(firstLayerHitZ-d,2))
 			eta0 = -1*ROOT.TMath.Log(ROOT.TMath.Tan(ROOT.TMath.ACos(firstLayerHitZ/r_0)/2))
-			LIGHTSPEED = 29.9792458 #cm/ns
 		
 			epsd2=(ROOT.TMath.Power(firstLayerHitZ/(firstLayerHitZ-d),2)-1.0)/ROOT.TMath.Power(ROOT.TMath.CosH(eta0),2)
 			fullShift = -(1.0/LIGHTSPEED*ROOT.TMath.TanH(eta0))*(firstLayerHitZ-(firstLayerHitZ+d)*ROOT.TMath.Sqrt(1+epsd2))
